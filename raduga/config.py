@@ -30,6 +30,7 @@ def _load_conf_file():
     if (os.path.exists(conf_path)):
         f = open(conf_path)
         ret.readfp(f, conf_path)
+        f.close()
     return ret
     
 def _save_conf_file(cfg):
@@ -41,9 +42,30 @@ def _save_conf_file(cfg):
     f = open(conf_path, "w")
     cfg.write(f)
     f.close()
-    # Make sure it has restricted permissons
+    # Make sure it has restricted permissons (since it tends to have stuff
+    # like credentials in it)
     os.chmod(conf_path, stat.S_IRUSR + stat.S_IWUSR)
 
+def _load_ini_file():
+    """
+    Loads the raduga.ini file from the current folder
+    """
+    ret = SafeConfigParser()
+    conf_path = "raduga.ini"
+    if (os.path.exists(conf_path)):
+        f = open(conf_path)
+        ret.readfp(f, conf_path)
+        f.close()
+    return ret
+
+def _save_ini_file(ini):
+    """
+    Save the raduga.ini file contents
+    """
+    conf_path = "raduga.ini"
+    f = open(conf_path, "w")
+    ini.write(f)
+    f.close()
 
 class Config:
     def __init__(self):
