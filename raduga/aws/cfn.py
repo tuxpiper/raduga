@@ -1,9 +1,11 @@
 from boto.exception import BotoServerError
+from boto.cloudformation.connection import CloudFormationConnection
 import logging
 
 _log = logging.getLogger(__name__)
+_non_delete_states = filter(lambda s: not s.startswith('DELETE_'), CloudFormationConnection.valid_states)
 
-class AWSCfn:
+class AWSCfn(object):
     def __init__(self, target):
         self.bucket = target.ensure_bucket_exists()
         self.conn = target.get_cfn_conn()
@@ -38,13 +40,16 @@ class AWSCfn:
             else:
                 cfn_api_call = self.conn.update_stack
 
-            # TODO: allow to set tags to the stack and have them propagate
             template_url = self._upload_stack_template(stack, stack_name)
-            stack_id = cfn_api_call(
+            api_call_args = dict(
                 stack_name=kwargs['stack_name'],
                 template_url=template_url,
                 parameters=parameters,
-                capabilities=stack.required_capabilities)
+                capabilities=stack.required_capabilities
+            )
+            if kwargs.has_key('tags'):
+                api_call_args['tags'] = kwargs['tags']
+            stack_id = cfn_api_call(**api_call_args)
             return self.AWSStack(stack_id)
         except BotoServerError as e:
             raise RuntimeError("AWS returned: " + str(e.args))
@@ -75,8 +80,13 @@ class AWSCfn:
         return self.AWSStack(stack_name)
     
     def list_stacks(self, **kwargs):
-        ss = filter(lambda s: s.stack_status != 'DELETE_COMPLETE', self.conn.list_stacks())
+        ss = self.conn.list_stacks(_non_delete_states)
         return [ s.stack_name for s in ss ]
+
+    def find_stacks(self, **tags):
+        stacks = self.conn.describe_stacks()
+        matches = filter(lambda s: all( map(lambda t: t in s.tags.items(), tags.items() ) ), stacks )
+        return [ self.AWSStack(s.stack_id) for s in matches ]
     
     def delete_stack(self, stack_name, **kwargs):
         self.conn.delete_stack(stack_name)
@@ -111,6 +121,7 @@ class _AWSStack:
         ret = vars(s)
         ret['parameters'] = params
         ret['outputs'] = outputs
+        ret['tags'] = s.tags 
         return ret
         
     def describe_resources(self):
@@ -167,6 +178,10 @@ class _AWSStack:
     def get_stack_status(self):
         status = self.describe()
         return status['stack_status']
+
+    def get_tags(self):
+        desc = self.describe()
+        return desc['tags']
     
     def is_being_created(self):
         status = self.describe()
@@ -183,6 +198,10 @@ class _AWSStack:
     def is_deleted(self):
         status = self.describe()
         return status['stack_status'] == 'DELETE_COMPLETE'
+
+    def is_failed_or_rollbacked(self):
+        status = self.describe()
+        return (status['stack_status'] in ['CREATE_FAILED', 'ROLLBACK_IN_PROGRESS', 'ROLLBACK_FAILED', 'ROLLBACK_COMPLETE'])
 
     def is_rollback_triggered(self):
         status = self.describe()

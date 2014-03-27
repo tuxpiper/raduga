@@ -102,9 +102,19 @@ class Target(object):
         else:
             return lookup
 
+    def get_region(self):
+        return self.region
+
+    def get_ec2_conn(self):
+        import boto.ec2
+        return boto.ec2.connect_to_region(
+            self.region,
+            aws_access_key_id=self.access_key,
+            aws_secret_access_key=self.secret_key
+        )
+
     def get_cfn_conn(self):
         import boto.cloudformation
-        print "connecting to %s , %s , %s" % (self.region, self.access_key, self.secret_key)
         return boto.cloudformation.connect_to_region(
             self.region,
             aws_access_key_id=self.access_key,

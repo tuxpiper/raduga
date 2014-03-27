@@ -2,16 +2,17 @@
 Raduga profile commands
 
 Usage:
-  pcli.py print [options] [<stack> [<stack> ...]]
-  pcli.py deploy [options] [<stack> [<stack> ...]]
-  pcli.py update [options] [<stack> [<stack> ...]]
-  pcli.py undeploy [options] [<stack> [<stack> ...]]
+    pcli.py print [options] [<stack> [<stack> ...]]
+    pcli.py deploy [options] [<stack> [<stack> ...]]
+    pcli.py build [options] [<stack> [<stack> ...]]
+    pcli.py update [options] [<stack> [<stack> ...]]
+    pcli.py undeploy [options] [<stack> [<stack> ...]]
 
 Options:
-  -h --help     Show this screen
-  -V --verbose  Be verbose
-  -D --debug    Be extremely verbose
-  --version     Show version
+    -h --help     Show this screen
+    -V --verbose  Be verbose
+    -D --debug    Be extremely verbose
+    --version     Show version
 """ 
 from docopt import docopt
 import pkg_resources, sys, string
@@ -43,5 +44,6 @@ def run(config_fn):
         raduga.printS(args['<stack>'])
     elif args['deploy']:
         raduga.deploy(args['<stack>'])
-
+    elif args['build']:
+        raduga.build_amis(args['<stack>'])
 
