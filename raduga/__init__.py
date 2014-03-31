@@ -90,13 +90,13 @@ class Raduga(object):
                     print "Found ami %s" % match_ami
                     if build.has_key('run_phases'):
                         run_phases = build['run_phases']
-                    elif build.has_key('targets') and build['targets'][0]['run_phases']:
+                    elif build.has_key('targets') and len(build['targets']) > 0 and build['targets'][0]['run_phases']:
                         run_phases = build['targets'][0]['run_phases']
                     break
             else:
                 if build.has_key('run_phases'):
                     run_phases = build['run_phases']
-                elif build.has_key('targets') and build['targets'][0]['run_phases']:
+                elif build.has_key('targets') and len(build['targets']) > 0 and build['targets'][0]['run_phases']:
                     run_phases = build['targets'][0]['run_phases']
         if match_ami is None:
             match_ami = base_ami
@@ -172,6 +172,9 @@ class Raduga(object):
                         # Bootstrap failed
                         print "Stack for building stack %s failed" % (name)
                         break
+                    # Cycle until stack is created or failed
+                    from time import sleep
+                    sleep(15)
 
 
     def deploy(self, stack_sel=None):
@@ -191,13 +194,13 @@ class Raduga(object):
                     # If there is a built AMI different than the base AMI, modify the element
                     if base_ami != run_ami:
                         print "Changing Resource %s to use AMI %s and phases to run %s" \
-                            % (l.ref_name, run_ami, map(lambda p: p.phase_name, run_phases)
+                            % (l.ref_name, run_ami, map(lambda p: p.phase_name, run_phases))
                         l.el_attrs["Properties"]["ImageId"] = run_ami
                         l.iscm.set_phases_to_run(run_phases)
                 cfn_stack = cfn.create_stack_in_cfn(
                     stack = stack,
                     stack_name = name,
-                    allow_update = False )
+                    allow_update = True )
                 print "* [created] name: " + str(cfn_stack)
 
     def printS(self, stack_sel=None):
