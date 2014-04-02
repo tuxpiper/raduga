@@ -4,7 +4,7 @@ Raduga profile commands
 Usage:
     pcli.py print [options] [<stack> [<stack> ...]]
     pcli.py deploy [options] [<stack> [<stack> ...]]
-    pcli.py build [options] [<stack> [<stack> ...]]
+    pcli.py build [options] [--next-only] [<stack> [<stack> ...]]
     pcli.py update [options] [<stack> [<stack> ...]]
     pcli.py undeploy [options] [<stack> [<stack> ...]]
 
@@ -12,6 +12,7 @@ Options:
     -h --help     Show this screen
     -V --verbose  Be verbose
     -D --debug    Be extremely verbose
+    -n --dry-run  Do not actually perform the action
     --version     Show version
 """ 
 from docopt import docopt
@@ -45,5 +46,5 @@ def run(config_fn):
     elif args['deploy']:
         raduga.deploy(args['<stack>'])
     elif args['build']:
-        raduga.build_amis(args['<stack>'])
-
+        build_next = args['--next-only']
+        raduga.build_amis(args['<stack>'], build_next=build_next)

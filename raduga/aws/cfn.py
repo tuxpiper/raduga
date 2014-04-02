@@ -60,6 +60,7 @@ class AWSCfn(object):
         k = Key(self.bucket)
         k.key = "raduga-%s-%d-%s" % ( stack_name, int(time.time()), "%04x" % random.randrange(16**4))
         template_body = stack.dump_json(pretty=False)
+        #print "Uploading\n%s\n\n" % template_body
         #
         _log.info("Uploading stack template to S3 (size %dKB out of 300KB allowed)" % (len(template_body) / 1024))
         k.set_contents_from_string(template_body)
