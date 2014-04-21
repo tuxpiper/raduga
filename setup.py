@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "raduga",
-    version = "0.0.3",
+    version = "0.0.4",
     packages = find_packages(),
 
     description = ("Infrastructure-as-code framework for AWS"),
