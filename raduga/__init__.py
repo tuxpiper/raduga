@@ -328,6 +328,35 @@ class Raduga(object):
                     allow_update = True )
                 print "* deployed/updated CFN stack with name: " + str(cfn_stack)
 
+    def diff(self, stack_sel=None):
+        cfn = AWSCfn(self.targets["aws"])
+        if stack_sel is None or len(stack_sel) == 0:
+            stacks = self.stacks.keys()
+        else:
+            stacks = stack_sel
+        #
+        for name in stacks:
+            desc = self.stacks[name]
+            with self._load_stack(name, desc) as stack:
+                stack_name = name
+                if desc.has_key('stack_name'):
+                    stack_name = desc['stack_name']
+                # Find out if there are any buildable launchables in the stack
+                buildables = filter(lambda l: l.is_buildable(), stack.get_launchable_resources())
+                for l in buildables:
+                    # Which AMI is best to run for the buildable?
+                    target = self._find_ami_for_launchable(l, PURPOSE_RUN)[0]
+                    # If there is a built AMI different than the base AMI, modify the element
+                    if target['base_ami'] != target['run_ami']:
+                        print "Changing Resource %s to use AMI %s and phases to run %s" \
+                            % (l.ref_name, target['run_ami'], target['run_phases'])
+                        l.el_attrs["Properties"]["ImageId"] = target['run_ami']
+                        l.iscm.set_phases_to_run(target['run_phases'])
+                #
+                cfn.diff_stack_in_cfn(
+                    stack = stack,
+                    stack_name = stack_name )
+
     def printS(self, stack_sel=None):
         if stack_sel is None or len(stack_sel) == 0:
             stacks = self.stacks.keys()

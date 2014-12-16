@@ -2,11 +2,12 @@
 Raduga profile commands
 
 Usage:
-    pcli.py print [options] [<stack> [<stack> ...]]
-    pcli.py deploy [options] [<stack> [<stack> ...]]
     pcli.py build [options] [--next-only] [<stack> [<stack> ...]]
-    pcli.py update [options] [<stack> [<stack> ...]]
+    pcli.py deploy [options] [<stack> [<stack> ...]]
+    pcli.py diff [options] [<stack> [<stack> ...]]
+    pcli.py print [options] [<stack> [<stack> ...]]
     pcli.py undeploy [options] [<stack> [<stack> ...]]
+    pcli.py update [options] [<stack> [<stack> ...]]
 
 Options:
     -h --help     Show this screen
@@ -48,3 +49,6 @@ def run(config_fn):
     elif args['build']:
         build_next = args['--next-only']
         raduga.build_amis(args['<stack>'], build_next=build_next)
+    elif args['diff']:
+        raduga.diff(args['<stack>'])
+        

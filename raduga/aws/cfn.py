@@ -1,6 +1,7 @@
 from boto.exception import BotoServerError
 from boto.cloudformation.connection import CloudFormationConnection
-import logging
+from json_tools import diff as json_diff
+import json, logging
 
 _log = logging.getLogger(__name__)
 _non_delete_states = filter(lambda s: not s.startswith('DELETE_'), CloudFormationConnection.valid_states)
@@ -51,6 +52,41 @@ class AWSCfn(object):
                 api_call_args['tags'] = kwargs['tags']
             stack_id = cfn_api_call(**api_call_args)
             return self.AWSStack(stack_id)
+        except BotoServerError as e:
+            raise RuntimeError("AWS returned: " + str(e.args))
+
+    def diff_stack_in_cfn(self, **kwargs):
+        """
+        Finds differences between a given stack and a deployed one.
+        Expected args:
+            stack = the stack code
+            stack_name = stack name in CloudFormation
+        Additional args:
+            parameters = list of tuples with parameter values
+        """
+        if not kwargs.has_key('parameters') or kwargs['parameters'] is None:
+            parameters=[]
+        else:
+            parameters = kwargs['parameters']
+        if not kwargs.has_key('stack'):
+            raise RuntimeError("stack not provided")
+        if not kwargs.has_key('stack_name'):
+            raise RuntimeError("stack name not provided")
+
+        stack = kwargs['stack']
+        stack_name = kwargs['stack_name']
+
+        if not self.stack_exists(stack_name):
+            raise RuntimeError("Stack %s is not deployed" % stack_name)
+
+        try:
+            cfn_stack = self.get_created_stack(stack_name).get_template()
+            cfn_stack = json.loads(cfn_stack['GetTemplateResponse']['GetTemplateResult']['TemplateBody'])
+            stack_template = json.loads(stack.dump_json(pretty=False))
+            diff = json_diff(cfn_stack, stack_template)
+            # TODO: compare parameters as well
+            print "Difference cfn -> code"
+            print json.dumps(diff, indent=2)
         except BotoServerError as e:
             raise RuntimeError("AWS returned: " + str(e.args))
 
@@ -183,6 +219,10 @@ class _AWSStack:
     def get_tags(self):
         desc = self.describe()
         return desc['tags']
+
+    def get_template(self):
+        cfn = self.cfn.conn
+        return cfn.get_template(stack_name_or_id=self.stack_id)
     
     def is_being_created(self):
         status = self.describe()
