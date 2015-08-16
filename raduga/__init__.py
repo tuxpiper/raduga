@@ -66,7 +66,8 @@ class Raduga(object):
             return getattr(mod, class_name)
         #
         with self.distmgr.requirement_loader(*self.req_modules):
-            environ = self.env.getEnvForStack(stack_name, _this_stack_name=self._stack_names[stack_name], _stack_names=self._stack_names)
+            stack_env = stack_desc['env'] if stack_desc.has_key('env') else {}
+            environ = self.env.getEnvForStack(stack_name, _this_stack_name=self._stack_names[stack_name], _stack_names=self._stack_names, **stack_env)
             if stack_desc.has_key('stack_class'):
                 stack = stack_desc['stack_class'](environ)
             elif stack_desc.has_key('stack_class_name'):
